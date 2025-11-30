@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_product_archive_replace">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        
+                        <!-- HEADER -->
+                        <div class="text-center" style="border-bottom: 3px solid #00a09d; padding-bottom: 20px; margin-bottom: 30px;">
+                            <h1 style="color: #00a09d; font-size: 28px; margin: 0;">
+                                PRODUCT ARCHIVE &amp; REPLACE
+                            </h1>
+                            <h2 style="color: #555; font-size: 18px; margin-top: 10px;">
+                                Migration Audit Report
+                            </h2>
+                        </div>
+
+                        <!-- EXECUTIVE SUMMARY -->
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                            <h3 style="color: #00a09d; margin-top: 0;">Executive Summary</h3>
+                            
+                            <table class="table table-sm" style="width: 100%;">
+                                <tr>
+                                    <td style="width: 40%; padding: 8px;"><strong>Migration Date:</strong></td>
+                                    <td style="padding: 8px;">
+                                        <t t-esc="o.migration_date.strftime('%Y-%m-%d %H:%M:%S')" t-if="o.migration_date"/>
+                                    </td>
+                                </tr>
+                                <tr style="background-color: white;">
+                                    <td style="padding: 8px;"><strong>Executed By:</strong></td>
+                                    <td style="padding: 8px;">
+                                        <t t-esc="o.migration_user_id.name"/> 
+                                        (<t t-esc="o.migration_user_id.email"/>)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px;"><strong>Target Product Type:</strong></td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.new_type == 'product'" class="badge badge-primary">Storable Product</span>
+                                        <span t-if="o.new_type == 'consu'" class="badge badge-info">Consumable</span>
+                                        <span t-if="o.new_type == 'service'" class="badge badge-secondary">Service</span>
+                                    </td>
+                                </tr>
+                                <tr style="background-color: white;">
+                                    <td style="padding: 8px;"><strong>Total Products Processed:</strong></td>
+                                    <td style="padding: 8px; font-size: 18px; font-weight: bold;">
+                                        <t t-esc="o.success_count + o.failed_count"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px;"><strong>Successful Replacements:</strong></td>
+                                    <td style="padding: 8px; color: green; font-weight: bold;">
+                                        <t t-esc="o.success_count"/>
+                                    </td>
+                                </tr>
+                                <tr style="background-color: white;">
+                                    <td style="padding: 8px;"><strong>Failed Replacements:</strong></td>
+                                    <td style="padding: 8px; font-weight: bold;">
+                                        <span t-if="o.failed_count > 0" style="color: red;">
+                                            <t t-esc="o.failed_count"/>
+                                        </span>
+                                        <span t-if="o.failed_count == 0" style="color: green;">
+                                            0
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- MIGRATION STATISTICS -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #00a09d; border-bottom: 2px solid #00a09d; padding-bottom: 10px;">
+                                Migration Statistics
+                            </h3>
+                            
+                            <table class="table table-bordered table-sm" style="width: 100%; margin-top: 15px;">
+                                <thead style="background-color: #00a09d; color: white;">
+                                    <tr>
+                                        <th style="padding: 10px;">Category</th>
+                                        <th style="padding: 10px; text-align: center;">Total Migrated</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 8px;">Sales Order Lines</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold;">
+                                            <t t-esc="sum(o.result_line_ids.filtered(lambda x: x.status == 'success').mapped('sales_migrated'))"/>
+                                        </td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <td style="padding: 8px;">Purchase Order Lines</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold;">
+                                            <t t-esc="sum(o.result_line_ids.filtered(lambda x: x.status == 'success').mapped('purchases_migrated'))"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px;">Bills of Materials (BOMs)</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold;">
+                                            <t t-esc="sum(o.result_line_ids.filtered(lambda x: x.status == 'success').mapped('boms_migrated'))"/>
+                                        </td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <td style="padding: 8px;">Pricelist Rules</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold;">
+                                            <t t-esc="sum(o.result_line_ids.filtered(lambda x: x.status == 'success').mapped('pricelists_migrated'))"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px;">Vendor Records</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold;">
+                                            <t t-esc="sum(o.result_line_ids.filtered(lambda x: x.status == 'success').mapped('vendors_migrated'))"/>
+                                        </td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <td style="padding: 8px;">Stock Transferred (units)</td>
+                                        <td style="padding: 8px; text-align: center; font-weight: bold; color: #00a09d;">
+                                            <t t-esc="'%.2f' % sum(o.result_line_ids.filtered(lambda x: x.status == 'success').mapped('stock_transferred'))"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- DETAILED RESULTS -->
+                        <div style="page-break-inside: avoid;">
+                            <h3 style="color: #00a09d; border-bottom: 2px solid #00a09d; padding-bottom: 10px;">
+                                Detailed Migration Results
+                            </h3>
+
+                            <table class="table table-bordered table-sm" style="width: 100%; margin-top: 15px; font-size: 10px;">
+                                <thead style="background-color: #00a09d; color: white;">
+                                    <tr>
+                                        <th style="padding: 8px; width: 3%;">#</th>
+                                        <th style="padding: 8px; width: 17%;">Old Product</th>
+                                        <th style="padding: 8px; width: 8%;">Old Ref</th>
+                                        <th style="padding: 8px; width: 10%;">Type Change</th>
+                                        <th style="padding: 8px; width: 17%;">New Product</th>
+                                        <th style="padding: 8px; width: 5%;">Sales</th>
+                                        <th style="padding: 8px; width: 5%;">Purch</th>
+                                        <th style="padding: 8px; width: 5%;">BOMs</th>
+                                        <th style="padding: 8px; width: 7%;">Stock</th>
+                                        <th style="padding: 8px; width: 8%;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="line_number" t-value="0"/>
+                                    <t t-foreach="o.result_line_ids" t-as="line">
+                                        <t t-set="line_number" t-value="line_number + 1"/>
+                                        <tr t-att-style="'background-color: #ffe6e6;' if line.status == 'failed' else ('background-color: #e6ffe6;' if line_number % 2 == 0 else '')">
+                                            <td style="padding: 6px; text-align: center;">
+                                                <t t-esc="line_number"/>
+                                            </td>
+                                            <td style="padding: 6px;">
+                                                <strong><t t-esc="line.old_product_name"/></strong>
+                                            </td>
+                                            <td style="padding: 6px; font-family: monospace;">
+                                                <t t-esc="line.old_default_code or '-'"/>
+                                            </td>
+                                            <td style="padding: 6px; text-align: center;">
+                                                <t t-esc="line.type_change"/>
+                                            </td>
+                                            <td style="padding: 6px;">
+                                                <t t-if="line.status == 'success'">
+                                                    <strong><t t-esc="line.new_product_name"/></strong><br/>
+                                                    <small style="color: #666;">ID: <t t-esc="line.new_product_id.id"/></small>
+                                                </t>
+                                                <t t-if="line.status == 'failed'">
+                                                    <span style="color: red;">Failed</span>
+                                                </t>
+                                            </td>
+                                            <td style="padding: 6px; text-align: center;">
+                                                <t t-esc="line.sales_migrated"/>
+                                            </td>
+                                            <td style="padding: 6px; text-align: center;">
+                                                <t t-esc="line.purchases_migrated"/>
+                                            </td>
+                                            <td style="padding: 6px; text-align: center;">
+                                                <t t-esc="line.boms_migrated"/>
+                                            </td>
+                                            <td style="padding: 6px; text-align: right;">
+                                                <t t-esc="'%.2f' % line.stock_transferred"/>
+                                            </td>
+                                            <td style="padding: 6px; text-align: center;">
+                                                <span t-if="line.status == 'success'" style="color: green; font-weight: bold;">Success</span>
+                                                <span t-if="line.status == 'failed'" style="color: red; font-weight: bold;">Failed</span>
+                                            </td>
+                                        </tr>
+                                        <!-- Error details if failed -->
+                                        <tr t-if="line.status == 'failed' and line.error_message">
+                                            <td colspan="10" style="padding: 8px; background-color: #fff3cd; border-left: 3px solid #dc3545;">
+                                                <strong style="color: #dc3545;">Error:</strong>
+                                                <t t-esc="line.error_message"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- MIGRATION OPTIONS APPLIED -->
+                        <div style="margin-top: 30px; page-break-inside: avoid;">
+                            <h3 style="color: #00a09d; border-bottom: 2px solid #00a09d; padding-bottom: 10px;">
+                                ⚙️ Migration Options Applied
+                            </h3>
+                            
+                            <table class="table table-sm" style="width: 100%; margin-top: 15px;">
+                                <tr>
+                                    <td style="width: 40%; padding: 8px;">Migrate Sales Orders</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.migrate_sales" style="color: green;">Enabled</span>
+                                        <span t-if="not o.migrate_sales" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 8px;">Migrate Purchase Orders</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.migrate_purchases" style="color: green;">Enabled</span>
+                                        <span t-if="not o.migrate_purchases" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px;">Migrate BOMs</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.migrate_boms" style="color: green;">Enabled</span>
+                                        <span t-if="not o.migrate_boms" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 8px;">Migrate Pricelists</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.migrate_pricelists" style="color: green;">Enabled</span>
+                                        <span t-if="not o.migrate_pricelists" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px;">Migrate Vendors</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.migrate_vendors" style="color: green;">Enabled</span>
+                                        <span t-if="not o.migrate_vendors" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                                <tr style="background-color: #f8f9fa;">
+                                    <td style="padding: 8px;">Transfer Stock</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.migrate_stock" style="color: green;">Enabled</span>
+                                        <span t-if="not o.migrate_stock" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px;">Continue on Error</td>
+                                    <td style="padding: 8px;">
+                                        <span t-if="o.continue_on_error" style="color: green;">Enabled</span>
+                                        <span t-if="not o.continue_on_error" style="color: #999;">Disabled</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- FOOTER / SIGNATURE -->
+                        <div style="margin-top: 50px; border-top: 2px solid #00a09d; padding-top: 20px;">
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td style="width: 50%; vertical-align: top;">
+                                        <p style="margin: 0;"><strong>Generated by:</strong></p>
+                                        <p style="margin: 5px 0;"><t t-esc="o.migration_user_id.name"/></p>
+                                        <p style="margin: 5px 0; color: #666; font-size: 11px;">
+                                            <t t-esc="o.migration_date.strftime('%Y-%m-%d %H:%M:%S')" t-if="o.migration_date"/>
+                                        </p>
+                                    </td>
+                                    <td style="width: 50%; text-align: right; vertical-align: top;">
+                                        <p style="margin: 0;"><strong>Approved by:</strong></p>
+                                        <p style="margin: 5px 0; color: #666;">_____________________</p>
+                                        <p style="margin: 5px 0; color: #666; font-size: 11px;">Signature &amp; Date</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="text-align: center; margin-top: 30px; color: #999; font-size: 10px;">
+                                This report was automatically generated by Odoo Product Archive &amp; Replace module v3.0<br/>
+                                For audit and compliance purposes only. Keep for record retention.
+                            </p>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>                        

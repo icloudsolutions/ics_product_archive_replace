@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_product_archive_replace_wizard,product.archive.replace.wizard,model_product_archive_replace_wizard,stock.group_stock_manager,1,1,1,1
+access_product_archive_replace_preview_line,product.archive.replace.preview.line,model_product_archive_replace_preview_line,stock.group_stock_manager,1,1,1,1
+access_product_archive_replace_result_line,product.archive.replace.result.line,model_product_archive_replace_result_line,stock.group_stock_manager,1,1,1,1

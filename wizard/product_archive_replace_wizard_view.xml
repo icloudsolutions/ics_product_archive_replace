@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Wizard Form View (PART 1/3) -->
+    <record id="view_product_archive_replace_wizard_form" model="ir.ui.view">
+        <field name="name">product.archive.replace.wizard.form</field>
+        <field name="model">product.archive.replace.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Archive and Replace Product">
+                <sheet>
+
+                    <!-- REQUIRED HIDDEN FIELDS -->
+                    <field name="show_results" invisible="1"/>
+                    <field name="show_preview" invisible="1"/>
+                    <field name="migration_date" invisible="1"/>
+                    <field name="migration_user_id" invisible="1"/>
+                    <field name="success_count" invisible="1"/>
+                    <field name="failed_count" invisible="1"/>
+
+                    <!-- ================================ -->
+                    <!-- RESULTS VIEW (After Migration)   -->
+                    <!-- ================================ -->
+                    <div attrs="{'invisible': [('show_results', '=', False)]}">
+                        
+                        <!-- Success Header -->
+                        <div class="alert alert-success" role="alert">
+                            <h3>✅ Migration Completed!</h3>
+                            <field name="migration_summary" widget="html" nolabel="1"/>
+                        </div>
+
+                        <!-- ACTION BUTTONS -->
+                        <group>
+                            <group string="📄 Export Options">
+                                <button name="action_print_audit_report"
+                                        string="Download PDF Audit Report"
+                                        type="object"
+                                        class="btn-primary"
+                                        icon="fa-file-pdf-o"
+                                        help="Generate a complete PDF audit report for paper archive"/>
+                            </group>
+
+                            <group string="🔍 View Results">
+                                <button name="action_view_new_products"
+                                        string="View New Products"
+                                        type="object"
+                                        class="btn-info"
+                                        icon="fa-cubes"
+                                        help="Open list of newly created products"/>
+                            </group>
+                        </group>
+
+                        <!-- Results Table -->
+                        <separator string="📋 Migration Results Detail"/>
+                        <field name="result_line_ids" nolabel="1" readonly="1">
+                            <tree create="false" edit="false" delete="false" 
+                                  decoration-success="status == 'success'" 
+                                  decoration-danger="status == 'failed'">
+                                <field name="old_product_name" string="Old Product"/>
+                                <field name="old_default_code" string="Old Ref"/>
+                                <field name="type_change" string="Type Change"/>
+                                <field name="new_product_name" string="New Product"/>
+                                <field name="sales_migrated" string="Sales" sum="Total"/>
+                                <field name="purchases_migrated" string="Purchases" sum="Total"/>
+                                <field name="boms_migrated" string="BOMs" sum="Total"/>
+                                <field name="stock_transferred" string="Stock" sum="Total"/>
+                                <field name="status" string="Status" widget="badge" 
+                                       decoration-success="status == 'success'"
+                                       decoration-danger="status == 'failed'"/>
+                            </tree>
+                        </field>
+
+                    </div>
+
+                    <!-- ================================ -->
+                    <!-- CONFIGURATION VIEW (Before)      -->
+                    <!-- ================================ -->
+                    <div attrs="{'invisible': [('show_results', '=', True)]}">
+
+                        <!-- Header Info -->
+                        <div class="alert alert-info" role="alert">
+                            <h4>🔄 Archive and Replace Strategy</h4>
+                            <p>Select products to process and configure migration options.</p>
+                        </div>
+
+                        <!-- Selection Mode -->
+                        <group>
+                            <field name="selection_mode" widget="radio"/>
+                        </group>
+
+                        <separator string="Product Selection"/>
+
+                        <!-- Single Product Selection -->
+                        <group attrs="{'invisible': [('selection_mode', '=', 'category')]}">
+                            <field name="product_ids"
+                                   widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   placeholder="Select products to replace..."/>
+                        </group>
+
+                        <!-- Category Selection -->
+                        <group attrs="{'invisible': [('selection_mode', '=', 'single')]}">
+                            <group>
+                                <field name="category_ids"
+                                       widget="many2many_tags"
+                                       placeholder="Select categories..."/>
+                                <field name="include_subcategories"
+                                       widget="boolean_toggle"
+                                       attrs="{'invisible': [('category_ids', '=', [])]}"/>
+                            </group>
+                            <group>
+                                <field name="filter_by_type" widget="boolean_toggle"/>
+                                <field name="current_type_filter"
+                                       attrs="{'invisible': [('filter_by_type', '=', False)],
+                                               'required': [('filter_by_type', '=', True)]}"/>
+                            </group>
+                        </group>
+
+                        <!-- Product Count + Preview Button -->
+                        <group>
+                            <group>
+                                <label for="product_count" string="Products to Process:"/>
+                                <div>
+                                    <field name="product_count" readonly="1" class="oe_inline"
+                                           style="font-size: 18px; font-weight: bold; color: #00a09d;"/>
+                                    <span style="margin-left: 5px; color: #777;">products will be replaced</span>
+                                </div>
+                            </group>
+                            <group>
+                                <button name="action_toggle_preview"
+                                        type="object"
+                                        class="btn-link"
+                                        attrs="{'invisible': [('product_count', '=', 0)]}">
+                                    <span attrs="{'invisible': [('show_preview', '=', True)]}">
+                                        📋 Show Products List
+                                    </span>
+                                    <span attrs="{'invisible': [('show_preview', '=', False)]}">
+                                        ⬆️ Hide Products List
+                                    </span>
+                                </button>
+                            </group>
+                        </group>
+
+                        <!-- PRODUCTS PREVIEW LIST -->
+                        <div attrs="{'invisible': ['|', ('show_preview', '=', False), ('product_count', '=', 0)]}">
+                            <separator string="📋 Products to Process"/>
+                            <field name="preview_line_ids" nolabel="1">
+                                <tree create="false" edit="false" delete="false" 
+                                      decoration-warning="has_stock" 
+                                      decoration-info="has_references">
+                                    <field name="product_name" string="Product"/>
+                                    <field name="default_code" string="Ref" optional="show"/>
+                                    <field name="current_type" string="Current Type"/>
+                                    <field name="categ_id" string="Category" optional="show"/>
+                                    <field name="sale_count" string="Sales" sum="Total"/>
+                                    <field name="purchase_count" string="Purchases" sum="Total"/>
+                                    <field name="bom_count" string="BOMs" sum="Total" optional="hide"/>
+                                    <field name="stock_qty" string="Stock" sum="Total" 
+                                           decoration-danger="stock_qty &gt; 0"/>
+                                    <field name="has_references" invisible="1"/>
+                                    <field name="has_stock" invisible="1"/>
+                                </tree>
+                            </field>
+                            <div class="text-muted" style="margin-top: 10px;">
+                                <i class="fa fa-info-circle"/> 
+                                <strong>Color codes:</strong> 
+                                <span style="color: #f0ad4e;">⚠️ Orange = Has stock</span> | 
+                                <span style="color: #5bc0de;">ℹ️ Blue = Has references</span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning"
+                             attrs="{'invisible': [('product_count', '>', 0)]}">
+                            <p><strong>⚠️ No products found</strong></p>
+                            <p>Please adjust your selection criteria.</p>
+                        </div>
+
+                        <separator string="New Product Type"
+                                   attrs="{'invisible': [('product_count', '=', 0)]}"/>
+
+                        <group attrs="{'invisible': [('product_count', '=', 0)]}">
+                            <field name="new_type" widget="radio" required="1"/>
+                        </group>
+
+                        <separator string="Current References Overview"
+                                   attrs="{'invisible': [('product_count', '=', 0)]}"/>
+
+                        <group attrs="{'invisible': [('product_count', '=', 0)]}">
+                            <group string="Order References">
+                                <label for="total_sale_count" string="Sales Order Lines:"/>
+                                <div>
+                                    <field name="total_sale_count" readonly="1" class="oe_inline"/>
+                                    <span class="text-muted" style="margin-left: 5px;">lines found</span>
+                                </div>
+
+                                <label for="total_purchase_count" string="Purchase Order Lines:"/>
+                                <div>
+                                    <field name="total_purchase_count" readonly="1" class="oe_inline"/>
+                                    <span class="text-muted" style="margin-left: 5px;">lines found</span>
+                                </div>
+                            </group>
+
+                            <group string="Product References">
+                                <label for="total_bom_count" string="BOM Records:"/>
+                                <div>
+                                    <field name="total_bom_count" readonly="1" class="oe_inline"/>
+                                    <span class="text-muted" style="margin-left: 5px;">records found</span>
+                                </div>
+
+                                <label for="total_pricelist_count" string="Pricelist Rules:"/>
+                                <div>
+                                    <field name="total_pricelist_count" readonly="1" class="oe_inline"/>
+                                    <span class="text-muted" style="margin-left: 5px;">rules found</span>
+                                </div>
+
+                                <label for="total_vendor_count" string="Vendor Records:"/>
+                                <div>
+                                    <field name="total_vendor_count" readonly="1" class="oe_inline"/>
+                                    <span class="text-muted" style="margin-left: 5px;">vendors found</span>
+                                </div>
+                            </group>
+                        </group>
+
+                        <group attrs="{'invisible': [('product_count', '=', 0)]}">
+                            <group string="Inventory">
+                                <label for="total_stock_qty" string="Total On-Hand Quantity:"/>
+                                <div>
+                                    <field name="total_stock_qty" readonly="1" class="oe_inline"
+                                           style="font-weight: bold;"/>
+                                    <span class="text-muted" style="margin-left: 5px;">units</span>
+                                </div>
+                            </group>
+                        </group>
+
+                        <separator string="Migration Options"
+                                   attrs="{'invisible': [('product_count', '=', 0)]}"/>
+
+                        <group attrs="{'invisible': [('product_count', '=', 0)]}">
+                            <group string="What to Migrate?">
+                                <field name="migrate_sales"
+                                       widget="boolean_toggle"
+                                       attrs="{'readonly': [('total_sale_count', '=', 0)]}"/>
+                                <field name="migrate_purchases"
+                                       widget="boolean_toggle"
+                                       attrs="{'readonly': [('total_purchase_count', '=', 0)]}"/>
+                                <field name="migrate_boms"
+                                       widget="boolean_toggle"
+                                       attrs="{'readonly': [('total_bom_count', '=', 0)]}"/>
+                            </group>
+
+                            <group>
+                                <field name="migrate_pricelists"
+                                       widget="boolean_toggle"
+                                       attrs="{'readonly': [('total_pricelist_count', '=', 0)]}"/>
+                                <field name="migrate_vendors"
+                                       widget="boolean_toggle"
+                                       attrs="{'readonly': [('total_vendor_count', '=', 0)]}"/>
+                                <field name="migrate_stock"
+                                       widget="boolean_toggle"
+                                       attrs="{'readonly': [('total_stock_qty', '=', 0)]}"/>
+                            </group>
+                        </group>
+
+                        <group attrs="{'invisible': [('product_count', '=', 0)]}">
+                            <field name="continue_on_error" widget="boolean_toggle"/>
+                            <div class="text-muted" style="margin-top: 5px;">
+                                <i class="fa fa-info-circle"/> Recommended: Continue even if some migrations fail.
+                                Failed items will be logged in the summary.
+                            </div>
+                        </group>
+
+                        <div class="alert alert-info"
+                             attrs="{'invisible': [('product_count', '=', 0)]}">
+                            <p><strong>ℹ️ How it works:</strong></p>
+                            <ol>
+                                <li>New products are created using Odoo's <code>copy()</code> method</li>
+                                <li>All selected references are migrated to the new products</li>
+                                <li>Stock quantities are transferred</li>
+                                <li>Old products are archived</li>
+                                <li>Full audit trail is maintained in chatter</li>
+                                <li>📄 <strong>Audit report can be exported to PDF after completion</strong></li>
+                            </ol>
+                            <p><strong>⚠️ Note:</strong> Historical stock moves stay with archived products.</p>
+                        </div>
+
+                    </div>
+
+                </sheet>
+
+                <footer>
+                    <button string="Archive and Replace"
+                            name="action_replace"
+                            type="object"
+                            class="btn-primary"
+                            attrs="{'invisible': ['|', ('show_results', '=', True), ('product_count', '=', 0)]}"/>
+                    <button string="Close"
+                            special="cancel"
+                            class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for wizard from product form/list -->
+    <record id="action_product_archive_replace_wizard" model="ir.actions.act_window">
+        <field name="name">Archive and Replace Product</field>
+        <field name="res_model">product.archive.replace.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">form,list</field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_product_archive_replace"
+              name="Archive and Replace Products"
+              parent="stock.menu_stock_config_settings"
+              action="action_product_archive_replace_wizard"
+              sequence="98"
+              groups="stock.group_stock_manager"/>
+
+</odoo>                            
