@@ -262,7 +262,7 @@
 
                         <group attrs="{'invisible': [('product_count', '=', 0)]}">
                             <field name="continue_on_error" widget="boolean_toggle"/>
-                            <div class="text-muted" style="margin-top: 5px;">
+                            <div colspan="2" class="text-muted" style="margin-top: 5px;">
                                 <i class="fa fa-info-circle"/> Recommended: Continue even if some migrations fail.
                                 Failed items will be logged in the summary.
                             </div>

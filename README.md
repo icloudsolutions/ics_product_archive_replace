@@ -207,4 +207,4 @@ For issues or questions, please contact your Odoo administrator.
 
 ---
 
-**Made for Odoo 16.0** | **© 2025 iCloud Solutions**
+**Made for Odoo 16.0** | **© 2024 Your Company**

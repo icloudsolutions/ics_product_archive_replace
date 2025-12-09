@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Product Template Form View - Add Replacement Fields -->
+    <record id="product_template_form_view_replacement" model="ir.ui.view">
+        <field name="name">product.template.form.replacement</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+
+            <!-- 🔥 Ajouter les champs obligatoires pour éviter l'erreur attrs -->
+            <xpath expr="//sheet" position="inside">
+                <field name="is_replacement" invisible="1"/>
+                <field name="was_replaced" invisible="1"/>
+            </xpath>
+
+            <!-- Add smart buttons for replacement chain -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+
+                <button name="action_view_replacement"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-arrow-right"
+                        attrs="{'invisible': [('replacement_template_id', '=', False)]}">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">View</span>
+                        <span class="o_stat_text">Replacement</span>
+                    </div>
+                </button>
+
+                <button name="action_view_replaced_product"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-arrow-left"
+                        attrs="{'invisible': [('replaced_template_id', '=', False)]}">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">View</span>
+                        <span class="o_stat_text">Original</span>
+                    </div>
+                </button>
+
+                <button name="action_view_replacement_chain"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-chain"
+                        attrs="{'invisible': [('replacement_chain_count', '=', 0)]}">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="replacement_chain_count"/>
+                        </span>
+                        <span class="o_stat_text">Replacement</span>
+                        <span class="o_stat_text">Chain</span>
+                    </div>
+                </button>
+
+            </xpath>
+
+            <!-- Add replacement fields in a new page -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Replacement History"
+                      attrs="{'invisible': ['&amp;', ('replacement_template_id', '=', False),
+                                            ('replaced_template_id', '=', False)]}">
+
+                    <group>
+                        <group string="Replacement Information"
+                               attrs="{'invisible': [('replacement_template_id', '=', False)]}">
+                            <field name="replacement_template_id" readonly="1"/>
+                            <field name="replacement_date" readonly="1"/>
+                            <field name="replacement_user_id" readonly="1"/>
+                            <field name="original_type" readonly="1"/>
+                        </group>
+
+                        <group string="Original Product Information"
+                               attrs="{'invisible': [('replaced_template_id', '=', False)]}">
+                            <field name="replaced_template_id" readonly="1"/>
+                            <field name="is_replacement" readonly="1" widget="boolean"/>
+                        </group>
+                    </group>
+
+                    <div class="alert alert-info"
+                         attrs="{'invisible': [('was_replaced', '=', False)]}">
+                        <p><strong>ℹ️ This product was replaced</strong></p>
+                        <p>This product has been archived and replaced with a new product.
+                           All references and stock have been migrated to the replacement product.</p>
+                    </div>
+
+                    <div class="alert alert-success"
+                         attrs="{'invisible': [('is_replacement', '=', False)]}">
+                        <p><strong>✅ This is a replacement product</strong></p>
+                        <p>This product was created to replace an archived product.
+                           All references and stock were migrated from the original product.</p>
+                    </div>
+
+                </page>
+            </xpath>
+
+            <!-- Add warning header for archived replaced products -->
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning" role="alert"
+                     attrs="{'invisible': ['|', ('active', '=', True), ('replacement_template_id', '=', False)]}">
+                    <p><strong>⚠️ Archived Product - Replaced</strong></p>
+                    <p>This product was replaced on <field name="replacement_date" readonly="1" class="oe_inline"/>
+                       by <field name="replacement_user_id" readonly="1" class="oe_inline"/>.</p>
+                    <p>View replacement: <field name="replacement_template_id" readonly="1" class="oe_inline"/></p>
+                </div>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Product Template Tree View - Add Replacement Indicators -->
+    <record id="product_template_tree_view_replacement" model="ir.ui.view">
+        <field name="name">product.template.tree.replacement</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='type']" position="after">
+                <field name="is_replacement" optional="hide" widget="boolean"/>
+                <field name="was_replaced" optional="hide" widget="boolean"/>
+                <field name="replacement_template_id" optional="hide"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Search View - Add Filters for Replacement Status -->
+    <record id="product_template_search_replacement" model="ir.ui.view">
+        <field name="name">product.template.search.replacement</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <separator/>
+                <filter string="Replacement Products"
+                        name="filter_is_replacement"
+                        domain="[('is_replacement', '=', True)]"/>
+                <filter string="Replaced Products"
+                        name="filter_was_replaced"
+                        domain="[('was_replaced', '=', True)]"/>
+                <filter string="Has Replacement Chain"
+                        name="filter_has_chain"
+                        domain="[('replacement_chain_count', '>', 0)]"/>
+            </xpath>
+
+            <xpath expr="//group" position="inside">
+                <filter string="Replacement Status"
+                        name="groupby_replacement_status"
+                        context="{'group_by': 'was_replaced'}"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Menu for Replaced Products -->
+    <record id="action_product_template_replaced" model="ir.actions.act_window">
+        <field name="name">Replaced Products</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('was_replaced', '=', True)]</field>
+        <field name="context">{'search_default_inactive': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No replaced products found
+            </p>
+            <p>
+                Products that have been archived and replaced will appear here.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_product_replaced"
+              name="Replaced Products"
+              parent="stock.menu_stock_config_settings"
+              action="action_product_template_replaced"
+              sequence="97"
+              groups="stock.group_stock_manager"/>
+
+</odoo>
